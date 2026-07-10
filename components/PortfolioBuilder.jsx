@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 const CATEGORY_ORDER = ["Equities", "Switzerland", "Bonds", "Commodities", "Crypto"];
 
 export default function PortfolioBuilder({
@@ -8,13 +10,21 @@ export default function PortfolioBuilder({
   setWeights,
   totalPct,
   onSelectAsset,
+  presets,
 }) {
+  const [activePreset, setActivePreset] = useState("Balanced");
   const grouped = CATEGORY_ORDER.map((cat) => ({
     cat,
     items: assets.filter((a) => a.category === cat),
   })).filter((g) => g.items.length > 0);
 
+  const applyPreset = (preset) => {
+    setActivePreset(preset.name);
+    setWeights({ ...preset.weights });
+  };
+
   const setWeight = (ticker, value) => {
+    setActivePreset(null);
     setWeights((prev) => {
       const next = { ...prev, [ticker]: value };
       if (value === 0) delete next[ticker];
@@ -56,6 +66,33 @@ export default function PortfolioBuilder({
         >
           {totalPct}%
         </span>
+      </div>
+
+      <div className="mb-5">
+        <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gold/80">
+          Preset strategies
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {presets.map((p) => (
+            <button
+              key={p.name}
+              onClick={() => applyPreset(p)}
+              title={p.desc}
+              className={`min-h-[36px] rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+                activePreset === p.name
+                  ? "border-green/50 bg-green/15 text-green"
+                  : "border-line bg-panel2/80 text-muted hover:border-green/40 hover:text-text"
+              }`}
+            >
+              {p.name}
+            </button>
+          ))}
+        </div>
+        {activePreset && (
+          <p className="mt-2 text-xs leading-relaxed text-muted">
+            {presets.find((p) => p.name === activePreset)?.desc}
+          </p>
+        )}
       </div>
 
       <div className="space-y-5">

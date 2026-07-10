@@ -24,6 +24,41 @@ const DEFAULT_WEIGHTS = {
   "BTC-USD": 5,
 };
 
+export const PRESETS = [
+  {
+    name: "Conservative",
+    desc: "Capital preservation first — half bonds, broad equities, some gold.",
+    weights: { AGG: 50, URTH: 25, "^SSMI": 15, GLD: 10 },
+  },
+  {
+    name: "Balanced",
+    desc: "The classic middle ground: global equities, Swiss core, bonds, gold, a dash of crypto.",
+    weights: DEFAULT_WEIGHTS,
+  },
+  {
+    name: "Aggressive",
+    desc: "Growth-maximizing: tech-heavy equities, emerging markets and Bitcoin.",
+    weights: { QQQ: 40, URTH: 30, EEM: 15, "BTC-USD": 15 },
+  },
+  {
+    name: "All-Swiss",
+    desc: "Home bias on purpose — SMI plus the three Swiss blue chips.",
+    weights: { "^SSMI": 40, "NESN.SW": 20, "NOVN.SW": 20, "UBSG.SW": 20 },
+  },
+  {
+    name: "Bogleheads 3-Fund",
+    desc: "The famous simple mix: world equities, emerging markets, bonds.",
+    weights: { URTH: 50, EEM: 20, AGG: 30 },
+  },
+  {
+    name: "Permanent Portfolio",
+    desc: "Harry Browne's all-weather idea, adapted: equities, gold, and bonds standing in for cash.",
+    weights: { SPY: 25, GLD: 25, AGG: 50 },
+  },
+];
+
+const RISK_FREE_RATE = 0.005; // ~Swiss risk-free rate assumption
+
 export default function App({ data }) {
   const [weights, setWeights] = useState(DEFAULT_WEIGHTS); // percentages
   const [detailTicker, setDetailTicker] = useState(null);
@@ -41,14 +76,18 @@ export default function App({ data }) {
     const fullYears = years.filter((y) => y.year !== data.months.at(-1).slice(0, 4));
     const best = fullYears.reduce((a, b) => (b.ret > a.ret ? b : a), fullYears[0]);
     const worst = fullYears.reduce((a, b) => (b.ret < a.ret ? b : a), fullYears[0]);
+    const c = cagr(values);
+    const vol = annualizedVolatility(returns);
     return {
       returns,
       values,
-      cagr: cagr(values),
-      vol: annualizedVolatility(returns),
+      cagr: c,
+      vol,
       mdd: maxDrawdown(values),
+      sharpe: vol > 0 ? (c - RISK_FREE_RATE) / vol : 0,
       best,
       worst,
+      years: fullYears,
       divScore: diversificationScore(fractions),
       fractions,
     };
@@ -102,6 +141,7 @@ export default function App({ data }) {
           setWeights={setWeights}
           totalPct={totalPct}
           onSelectAsset={setDetailTicker}
+          presets={PRESETS}
         />
         <Dashboard
           data={data}

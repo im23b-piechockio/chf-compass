@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   PieChart,
   Pie,
@@ -8,12 +8,53 @@ import {
   ResponsiveContainer,
   LineChart,
   Line,
+  BarChart,
+  Bar,
+  ReferenceLine,
   XAxis,
   YAxis,
   Tooltip,
   CartesianGrid,
 } from "recharts";
-import { chf, pct } from "../lib/finance";
+import {
+  chf,
+  pct,
+  monthlyReturns,
+  cumulativeValue,
+} from "../lib/finance";
+
+const BENCHMARKS = [
+  { ticker: null, label: "No benchmark" },
+  { ticker: "URTH", label: "MSCI World" },
+  { ticker: "^SSMI", label: "SMI" },
+];
+
+const TOOLTIP_STYLE = {
+  background: "#16161b",
+  border: "1px solid #26262b",
+  borderRadius: 12,
+  color: "#e6e8ec",
+};
+
+function InfoTip({ text }) {
+  return (
+    <span className="group relative inline-flex">
+      <button
+        type="button"
+        aria-label={text}
+        className="flex h-5 w-5 items-center justify-center rounded-full border border-line text-[10px] text-muted transition hover:border-green/50 hover:text-green focus:border-green/50 focus:text-green focus:outline-none"
+      >
+        i
+      </button>
+      <span
+        role="tooltip"
+        className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 hidden w-52 -translate-x-1/2 rounded-lg border border-line bg-panel2 p-2.5 text-left text-[11px] font-normal normal-case leading-relaxed tracking-normal text-text/90 shadow-xl group-hover:block group-focus-within:block"
+      >
+        {text}
+      </span>
+    </span>
+  );
+}
 
 const PALETTE = [
   "#34d399",
@@ -29,13 +70,14 @@ const PALETTE = [
   "#4ade80",
 ];
 
-function MetricCard({ label, value, sub, tone = "text" }) {
+function MetricCard({ label, value, sub, tone = "text", info }) {
   const toneClass =
     tone === "green" ? "text-green" : tone === "red" ? "text-red" : "text-text";
   return (
     <div className="glass2 p-4">
-      <p className="text-[11px] font-semibold uppercase tracking-wider text-muted">
+      <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted">
         {label}
+        {info && <InfoTip text={info} />}
       </p>
       <p className={`mt-1 text-xl font-bold tabular-nums sm:text-2xl ${toneClass}`}>
         {value}
@@ -108,6 +150,15 @@ function buildInsights(stats, weights, totalPct, assets) {
 }
 
 export default function Dashboard({ data, stats, weights, totalPct }) {
+  const [benchmark, setBenchmark] = useState("URTH");
+
+  const benchmarkValues = useMemo(() => {
+    if (!benchmark) return null;
+    const asset = data.assets.find((a) => a.ticker === benchmark);
+    if (!asset) return null;
+    return cumulativeValue(monthlyReturns(asset.prices), 10000);
+  }, [benchmark, data]);
+
   const donutData = useMemo(
     () =>
       Object.entries(weights)
@@ -124,8 +175,9 @@ export default function Dashboard({ data, stats, weights, totalPct }) {
     return stats.values.map((v, i) => ({
       month: data.months[i],
       value: Math.round(v),
+      benchmark: benchmarkValues ? Math.round(benchmarkValues[i]) : undefined,
     }));
-  }, [stats, data]);
+  }, [stats, data, benchmarkValues]);
 
   if (!stats) {
     return (
@@ -137,45 +189,72 @@ export default function Dashboard({ data, stats, weights, totalPct }) {
 
   const insights = buildInsights(stats, weights, totalPct, data.assets);
   const endValue = stats.values[stats.values.length - 1];
+  const benchEnd = benchmarkValues
+    ? benchmarkValues[benchmarkValues.length - 1]
+    : null;
+  const outperformance = benchEnd != null ? endValue - benchEnd : null;
+  const benchLabel = BENCHMARKS.find((b) => b.ticker === benchmark)?.label;
 
   return (
     <section className="space-y-6">
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
         <MetricCard
           label="Annualized return"
           value={pct(stats.cagr)}
           sub="CAGR, last 10 years"
           tone={stats.cagr >= 0 ? "green" : "red"}
+          info="The compound annual growth rate — the constant yearly return that would turn the starting value into the final value over the whole period."
         />
         <MetricCard
           label="Volatility"
           value={pct(stats.vol)}
           sub="annualized, monthly data"
+          info="How much the portfolio's value swings around its average, per year. Higher volatility means a bumpier ride."
+        />
+        <MetricCard
+          label="Sharpe ratio"
+          value={stats.sharpe.toFixed(2)}
+          sub="return per unit of risk"
+          tone={stats.sharpe >= 1 ? "green" : stats.sharpe < 0.5 ? "red" : "text"}
+          info="Return earned above a ~0.5% risk-free rate, divided by volatility. Above 1 is considered good — more reward for each unit of risk taken."
         />
         <MetricCard
           label="Max drawdown"
           value={pct(stats.mdd)}
           sub="worst peak-to-trough"
           tone="red"
+          info="The deepest fall from a previous high before recovering — the worst loss an investor would have sat through."
         />
         <MetricCard
           label="Best year"
           value={pct(stats.best.ret)}
           sub={stats.best.year}
           tone="green"
+          info="The strongest full calendar-year return of this mix in the backtest period."
         />
         <MetricCard
           label="Worst year"
           value={pct(stats.worst.ret)}
           sub={stats.worst.year}
           tone={stats.worst.ret < 0 ? "red" : "text"}
+          info="The weakest full calendar-year return — a feel for what a bad year looks like."
         />
         <MetricCard
           label="Diversification"
           value={`${stats.divScore}/100`}
           sub="concentration-based"
           tone={stats.divScore >= 60 ? "green" : stats.divScore < 30 ? "red" : "text"}
+          info="Based on how evenly weights are spread (inverse Herfindahl index). 0 = everything in one asset, 100 = spread across many."
         />
+        {outperformance != null && (
+          <MetricCard
+            label={`vs. ${benchLabel}`}
+            value={`${outperformance >= 0 ? "+" : ""}${chf(outperformance)}`}
+            sub={`${outperformance >= 0 ? "+" : ""}${pct(endValue / benchEnd - 1)} vs. benchmark`}
+            tone={outperformance >= 0 ? "green" : "red"}
+            info={`Final value of your portfolio minus the final value of CHF 10’000 invested purely in ${benchLabel} over the same period.`}
+          />
+        )}
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[280px_1fr]">
@@ -227,13 +306,27 @@ export default function Dashboard({ data, stats, weights, totalPct }) {
         </div>
 
         <div className="glass p-5">
-          <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
             <h3 className="text-sm font-semibold uppercase tracking-wider text-muted">
               CHF 10’000 invested — 10-year backtest
             </h3>
-            <span className="text-lg font-bold tabular-nums text-green">
-              {chf(endValue)}
-            </span>
+            <div className="flex items-center gap-3">
+              <select
+                value={benchmark || ""}
+                onChange={(e) => setBenchmark(e.target.value || null)}
+                aria-label="Benchmark"
+                className="glass2 min-h-[36px] px-2.5 py-1 text-xs font-semibold text-muted outline-none"
+              >
+                {BENCHMARKS.map((b) => (
+                  <option key={b.label} value={b.ticker || ""}>
+                    {b.label}
+                  </option>
+                ))}
+              </select>
+              <span className="text-lg font-bold tabular-nums text-green">
+                {chf(endValue)}
+              </span>
+            </div>
           </div>
           <div className="h-64 sm:h-72">
             <ResponsiveContainer width="100%" height="100%">
@@ -256,15 +349,24 @@ export default function Dashboard({ data, stats, weights, totalPct }) {
                   domain={["auto", "auto"]}
                 />
                 <Tooltip
-                  formatter={(v) => [chf(v), "Portfolio value"]}
+                  formatter={(v, name) => [
+                    chf(v),
+                    name === "value" ? "Your portfolio" : benchLabel,
+                  ]}
                   labelStyle={{ color: "#8b909b" }}
-                  contentStyle={{
-                    background: "#16161b",
-                    border: "1px solid #26262b",
-                    borderRadius: 12,
-                    color: "#e6e8ec",
-                  }}
+                  contentStyle={TOOLTIP_STYLE}
                 />
+                {benchmarkValues && (
+                  <Line
+                    type="monotone"
+                    dataKey="benchmark"
+                    stroke="#e5b567"
+                    strokeWidth={1.5}
+                    strokeDasharray="5 4"
+                    dot={false}
+                    animationDuration={600}
+                  />
+                )}
                 <Line
                   type="monotone"
                   dataKey="value"
@@ -276,10 +378,63 @@ export default function Dashboard({ data, stats, weights, totalPct }) {
               </LineChart>
             </ResponsiveContainer>
           </div>
-          <p className="mt-2 text-xs text-muted">
-            Monthly rebalanced to target weights · dividends included (adjusted
-            close) · all values in CHF.
-          </p>
+          <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+            <p className="text-xs text-muted">
+              Monthly rebalanced to target weights · dividends included
+              (adjusted close) · all values in CHF.
+            </p>
+            {outperformance != null && (
+              <p className="text-xs font-semibold tabular-nums">
+                <span className="text-muted">vs. {benchLabel}: </span>
+                <span className={outperformance >= 0 ? "text-green" : "text-red"}>
+                  {outperformance >= 0 ? "+" : ""}
+                  {chf(outperformance)} ({outperformance >= 0 ? "+" : ""}
+                  {pct(endValue / benchEnd - 1)})
+                </span>
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="glass p-5">
+        <h3 className="mb-3 flex items-center gap-1.5 text-sm font-semibold uppercase tracking-wider text-muted">
+          Year-by-year returns
+          <InfoTip text="Calendar-year return of your portfolio mix for each full year in the backtest — a feel for the good and bad years you would have lived through." />
+        </h3>
+        <div className="h-52 sm:h-60">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              data={stats.years.map((y) => ({ year: y.year, ret: +(y.ret * 100).toFixed(1) }))}
+              margin={{ top: 4, right: 4, bottom: 0, left: 4 }}
+            >
+              <CartesianGrid stroke="#26262b" strokeDasharray="3 6" vertical={false} />
+              <XAxis
+                dataKey="year"
+                tick={{ fill: "#8b909b", fontSize: 11 }}
+                axisLine={{ stroke: "#26262b" }}
+                tickLine={false}
+              />
+              <YAxis
+                tick={{ fill: "#8b909b", fontSize: 11 }}
+                tickFormatter={(v) => `${v}%`}
+                axisLine={false}
+                tickLine={false}
+                width={40}
+              />
+              <ReferenceLine y={0} stroke="#26262b" />
+              <Tooltip
+                formatter={(v) => [`${v}%`, "Return"]}
+                cursor={{ fill: "#16161b" }}
+                contentStyle={TOOLTIP_STYLE}
+              />
+              <Bar dataKey="ret" radius={[4, 4, 0, 0]} animationDuration={500}>
+                {stats.years.map((y) => (
+                  <Cell key={y.year} fill={y.ret >= 0 ? "#34d399" : "#fb7185"} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
         </div>
       </div>
 
