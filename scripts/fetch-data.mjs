@@ -109,6 +109,9 @@ async function main() {
     generatedAt: new Date().toISOString(),
     baseCurrency: "CHF",
     months,
+    // USDCHF rate per common month (forward-filled) — lets the app recover
+    // local-currency (USD) returns for the hedged-vs-unhedged view.
+    fx: months.map((m) => +fxAt(m).toFixed(6)),
     assets: series.map((s) => {
       // Full available CHF history (for stress tests over older crises).
       const histMonths = [...s.prices.keys()].sort();

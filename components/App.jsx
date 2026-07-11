@@ -11,6 +11,7 @@ import PrintReport from "./PrintReport";
 // Below-the-fold sections load lazily to keep the initial bundle lean.
 const QuantLab = dynamic(() => import("./QuantLab"));
 const ProAnalytics = dynamic(() => import("./ProAnalytics"));
+const SwissPlanning = dynamic(() => import("./SwissPlanning"));
 const Pillar3a = dynamic(() => import("./Pillar3a"));
 const AssetDetail = dynamic(() => import("./AssetDetail"));
 import { encodeWeights, decodeWeights, updateUrlParams } from "../lib/urlState";
@@ -223,6 +224,10 @@ export default function App({ data }) {
       />
 
       <Pillar3a backtestedReturn={stats ? stats.cagr : 0.05} />
+
+      {stats && (
+        <SwissPlanning data={data} stats={stats} weights={weights} />
+      )}
 
       {detailAsset && (
         <AssetDetail

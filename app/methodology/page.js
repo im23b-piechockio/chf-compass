@@ -149,6 +149,40 @@ export default function Methodology() {
         />
       </div>
 
+      <h3 className="mb-3 mt-8 text-lg font-bold">Planning tools</h3>
+      <div className="space-y-3">
+        <Formula
+          name="FIRE planner"
+          formula="FI number = 25 × annual spending (4% rule)"
+          note="Years to FI via monthly compounding; success rate = share of 1,000 bootstrap paths that survive 30 years of withdrawals."
+        />
+        <Formula
+          name="Mortgage affordability"
+          formula="imputed interest (5%) + maintenance (1% of price) + amortization to 65% LTV over 15y ≤ 33% of gross income"
+          note="Standard Swiss lending rules of thumb; min 20% equity. All three rates are editable in the UI."
+        />
+        <Formula
+          name="Goal planner"
+          formula="required monthly = (target − initial·(1+i)^m) · i / (((1+i)^m − 1)(1+i))"
+          note="Probability of success from bootstrap Monte Carlo at that saving rate."
+        />
+        <Formula
+          name="Staggered 3a withdrawal"
+          formula="progressive bracket tax on one lump sum vs. N smaller ones"
+          note="Rough combined federal+cantonal bracket table, labelled in the UI. Illustrative only."
+        />
+        <Formula
+          name="Canton tax comparison"
+          formula="effective rate ≈ cap · income / (income + 80'000) per canton"
+          note="Calibrated to typical published effective rates for a single person; rough estimates for comparison only."
+        />
+        <Formula
+          name="Currency / hedging view"
+          formula="USD price = CHF price ÷ USDCHF; hedged proxy uses local-currency returns"
+          note="Assumes perfect, free hedging — real hedging carries costs."
+        />
+      </div>
+
       <h3 className="mt-8 text-lg font-bold">Assumptions &amp; limitations</h3>
       <ul className="mt-2 list-disc space-y-1.5 pl-5 text-sm leading-relaxed text-muted">
         <li>No transaction costs, taxes on dividends, or spreads in backtests; fund fees only where the TER input applies.</li>
