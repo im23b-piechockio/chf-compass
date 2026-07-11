@@ -2,9 +2,9 @@
 
 **Live demo → [chf-compass.vercel.app](https://chf-compass.vercel.app)**
 
-An interactive investment portfolio dashboard and savings-plan simulator in Swiss francs (CHF), built on **real historical market data** — no invented numbers anywhere.
+An interactive investment portfolio dashboard, risk-analytics desk and Swiss financial-planning suite in Swiss francs (CHF), built on **real historical market data** — no invented numbers anywhere.
 
-Built as a portfolio flagship project to demonstrate both software engineering and financial thinking.
+Built as a portfolio flagship project to demonstrate both software engineering and financial thinking. Organized into four sections: **Overview** (builder + dashboard), **Analytics** (quant lab + risk desk), **Planning** (Swiss financial life), and **Simulator** (savings plans).
 
 ## What it does
 
