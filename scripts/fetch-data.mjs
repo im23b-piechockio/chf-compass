@@ -16,23 +16,23 @@ import { fileURLToPath } from "node:url";
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 
 const UNIVERSE = [
-  { ticker: "URTH",    name: "MSCI World",       category: "Equities",    currency: "USD" },
-  { ticker: "SPY",     name: "S&P 500",          category: "Equities",    currency: "USD" },
-  { ticker: "QQQ",     name: "Nasdaq 100",       category: "Equities",    currency: "USD" },
-  { ticker: "EEM",     name: "Emerging Markets", category: "Equities",    currency: "USD" },
-  { ticker: "^SSMI",   name: "SMI (Swiss Market Index)", category: "Switzerland", currency: "CHF" },
-  { ticker: "NESN.SW", name: "Nestlé",           category: "Switzerland", currency: "CHF" },
-  { ticker: "NOVN.SW", name: "Novartis",         category: "Switzerland", currency: "CHF" },
-  { ticker: "UBSG.SW", name: "UBS",              category: "Switzerland", currency: "CHF" },
-  { ticker: "AGG",     name: "US Aggregate Bonds", category: "Bonds",     currency: "USD" },
-  { ticker: "GLD",     name: "Gold",             category: "Commodities", currency: "USD" },
-  { ticker: "BTC-USD", name: "Bitcoin",          category: "Crypto",      currency: "USD" },
+  { ticker: "URTH",    name: "MSCI World",       category: "Equities",    currency: "USD", region: "Global",       assetClass: "Equity",    sector: "Diversified" },
+  { ticker: "SPY",     name: "S&P 500",          category: "Equities",    currency: "USD", region: "US",           assetClass: "Equity",    sector: "Diversified" },
+  { ticker: "QQQ",     name: "Nasdaq 100",       category: "Equities",    currency: "USD", region: "US",           assetClass: "Equity",    sector: "Technology" },
+  { ticker: "EEM",     name: "Emerging Markets", category: "Equities",    currency: "USD", region: "Emerging",     assetClass: "Equity",    sector: "Diversified" },
+  { ticker: "^SSMI",   name: "SMI (Swiss Market Index)", category: "Switzerland", currency: "CHF", region: "Switzerland", assetClass: "Equity", sector: "Diversified" },
+  { ticker: "NESN.SW", name: "Nestlé",           category: "Switzerland", currency: "CHF", region: "Switzerland",  assetClass: "Equity",    sector: "Consumer Staples" },
+  { ticker: "NOVN.SW", name: "Novartis",         category: "Switzerland", currency: "CHF", region: "Switzerland",  assetClass: "Equity",    sector: "Healthcare" },
+  { ticker: "UBSG.SW", name: "UBS",              category: "Switzerland", currency: "CHF", region: "Switzerland",  assetClass: "Equity",    sector: "Financials" },
+  { ticker: "AGG",     name: "US Aggregate Bonds", category: "Bonds",     currency: "USD", region: "US",           assetClass: "Bonds",     sector: "Fixed Income" },
+  { ticker: "GLD",     name: "Gold",             category: "Commodities", currency: "USD", region: "Global",       assetClass: "Commodity", sector: "Precious Metals" },
+  { ticker: "BTC-USD", name: "Bitcoin",          category: "Crypto",      currency: "USD", region: "Global",       assetClass: "Crypto",    sector: "Digital Assets" },
 ];
 
 async function fetchChart(ticker) {
   const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(
     ticker
-  )}?interval=1mo&range=15y`;
+  )}?interval=1mo&range=max`;
   const res = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0" } });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const json = await res.json();
@@ -75,12 +75,23 @@ async function main() {
   }
   if (series.length === 0) throw new Error("no assets fetched");
 
-  // Convert USD assets to CHF.
+  // Convert USD assets to CHF. Yahoo's FX series has occasional missing
+  // months (e.g. Octobers) — forward-fill from the most recent prior rate.
+  const fxMonths = [...fx.keys()].sort();
+  const fxAt = (month) => {
+    if (fx.has(month)) return fx.get(month);
+    let best = null;
+    for (const m of fxMonths) {
+      if (m < month) best = m;
+      else break;
+    }
+    return best ? fx.get(best) : null;
+  };
   for (const s of series) {
     if (s.currency !== "USD") continue;
     const converted = new Map();
     for (const [month, price] of s.prices) {
-      const rate = fx.get(month);
+      const rate = fxAt(month);
       if (rate) converted.set(month, price * rate);
     }
     s.prices = converted;
@@ -98,13 +109,24 @@ async function main() {
     generatedAt: new Date().toISOString(),
     baseCurrency: "CHF",
     months,
-    assets: series.map((s) => ({
-      ticker: s.ticker,
-      name: s.name,
-      category: s.category,
-      nativeCurrency: s.currency,
-      prices: months.map((m) => +s.prices.get(m).toFixed(4)),
-    })),
+    assets: series.map((s) => {
+      // Full available CHF history (for stress tests over older crises).
+      const histMonths = [...s.prices.keys()].sort();
+      return {
+        ticker: s.ticker,
+        name: s.name,
+        category: s.category,
+        region: s.region,
+        assetClass: s.assetClass,
+        sector: s.sector,
+        nativeCurrency: s.currency,
+        prices: months.map((m) => +s.prices.get(m).toFixed(4)),
+        history: {
+          months: histMonths,
+          prices: histMonths.map((m) => +s.prices.get(m).toFixed(4)),
+        },
+      };
+    }),
   };
 
   mkdirSync(join(ROOT, "data"), { recursive: true });

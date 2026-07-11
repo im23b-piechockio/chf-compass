@@ -120,6 +120,29 @@ export default function Methodology() {
           note="Each random portfolio's historical CAGR and volatility is computed; the frontier is the best return per risk bucket."
         />
         <Formula
+          name="Historical VaR / CVaR (95%, monthly)"
+          formula="VaR = 5th percentile of monthly returns; CVaR = mean of returns below it"
+          note="Both reported as positive loss figures on a CHF 10'000 position."
+        />
+        <Formula
+          name="Risk contribution"
+          formula="RC_i = w_i · (Σw)_i / (wᵀΣw)"
+          note="Σ is the covariance matrix of monthly returns. Risk parity iteratively equalizes all RC_i."
+        />
+        <Formula
+          name="Portfolio beta"
+          formula="β = cov(r_p, r_bench) / var(r_bench)"
+        />
+        <Formula
+          name="Stress tests"
+          formula="crisis window applied to current weights on full asset histories"
+          note="Assets without complete data for a window are excluded and the remaining weights renormalized; recovery time counts months from the trough until the starting value is regained."
+        />
+        <Formula
+          name="Rebalancing effect"
+          formula="monthly-rebalanced value vs. buy-and-hold (initial split, never rebalanced)"
+        />
+        <Formula
           name="Pillar 3a tax saving"
           formula="contribution × marginal tax rate"
           note="Contribution capped at the official 2026 employee maximum (CHF 7'258). Withdrawal taxation is not modelled."

@@ -10,6 +10,7 @@ import PrintReport from "./PrintReport";
 
 // Below-the-fold sections load lazily to keep the initial bundle lean.
 const QuantLab = dynamic(() => import("./QuantLab"));
+const ProAnalytics = dynamic(() => import("./ProAnalytics"));
 const Pillar3a = dynamic(() => import("./Pillar3a"));
 const AssetDetail = dynamic(() => import("./AssetDetail"));
 import { encodeWeights, decodeWeights, updateUrlParams } from "../lib/urlState";
@@ -206,6 +207,15 @@ export default function App({ data }) {
       </div>
 
       {stats && <QuantLab data={data} stats={stats} weights={weights} />}
+
+      {stats && (
+        <ProAnalytics
+          data={data}
+          stats={stats}
+          weights={weights}
+          setWeights={setWeights}
+        />
+      )}
 
       <SavingsSimulator
         backtestedReturn={stats ? stats.cagr : 0.05}
