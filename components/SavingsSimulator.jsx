@@ -19,6 +19,8 @@ import {
 } from "../lib/finance";
 
 const SAVINGS_RATE = 0.005; // typical Swiss savings account / pillar-3a cash rate
+const DEFAULT_INFLATION = 1.0; // % p.a., long-run Swiss average assumption
+const DEFAULT_TER = 0.2; // % p.a., typical low-cost index ETF fee
 
 function NumberInput({ label, value, onChange, min, max, step, suffix }) {
   return (
@@ -50,24 +52,45 @@ export default function SavingsSimulator({ backtestedReturn, historicalReturns }
     +(backtestedReturn * 100).toFixed(1)
   );
   const [touched, setTouched] = useState(false);
+  const [ter, setTer] = useState(DEFAULT_TER);
+  const [realMode, setRealMode] = useState(false);
+  const [inflation, setInflation] = useState(DEFAULT_INFLATION);
 
   // Follow the portfolio's backtested return until the user edits the field.
   useEffect(() => {
     if (!touched) setAnnualReturn(+(backtestedReturn * 100).toFixed(1));
   }, [backtestedReturn, touched]);
 
-  const { points, savingsPoints, mc } = useMemo(() => {
+  const { points, savingsPoints, mc, feeCost } = useMemo(() => {
     const safeYears = Math.min(50, Math.max(1, years || 1));
-    const r = (annualReturn || 0) / 100;
+    const gross = (annualReturn || 0) / 100;
+    const net = gross - Math.max(0, ter || 0) / 100; // return after fund fees
+    // Deflate to today's purchasing power when the inflation toggle is on.
+    const defl = realMode
+      ? (p) => {
+          const f = Math.pow(1 + Math.max(0, inflation || 0) / 100, -p.year);
+          const out = {};
+          for (const k of Object.keys(p)) {
+            out[k] = k === "year" ? p.year : Math.round(p[k] * f);
+          }
+          return out;
+        }
+      : (p) => p;
+    const grossPoints = savingsProjection(initial || 0, monthly || 0, safeYears, gross);
+    const netPoints = savingsProjection(initial || 0, monthly || 0, safeYears, net);
+    const mcRaw =
+      historicalReturns && historicalReturns.length > 0
+        ? monteCarloProjection(initial || 0, monthly || 0, safeYears, historicalReturns)
+        : null;
     return {
-      points: savingsProjection(initial || 0, monthly || 0, safeYears, r),
-      savingsPoints: savingsProjection(initial || 0, monthly || 0, safeYears, SAVINGS_RATE),
-      mc:
-        historicalReturns && historicalReturns.length > 0
-          ? monteCarloProjection(initial || 0, monthly || 0, safeYears, historicalReturns)
-          : null,
+      points: netPoints.map(defl),
+      savingsPoints: savingsProjection(initial || 0, monthly || 0, safeYears, SAVINGS_RATE).map(defl),
+      mc: mcRaw ? mcRaw.map(defl) : null,
+      feeCost:
+        grossPoints[grossPoints.length - 1].value -
+        netPoints[netPoints.length - 1].value,
     };
-  }, [initial, monthly, years, annualReturn, historicalReturns]);
+  }, [initial, monthly, years, annualReturn, ter, realMode, inflation, historicalReturns]);
 
   const final = points[points.length - 1];
   const savingsFinal = savingsPoints[savingsPoints.length - 1];
@@ -110,9 +133,52 @@ export default function SavingsSimulator({ backtestedReturn, historicalReturns }
             suffix="% p.a."
           />
         </div>
+        <div className="mt-3 grid grid-cols-2 items-end gap-3 sm:grid-cols-4">
+          <NumberInput
+            label="Fund fee (TER)"
+            value={ter}
+            onChange={setTer}
+            min={0}
+            max={3}
+            step={0.05}
+            suffix="% p.a."
+          />
+          <NumberInput
+            label="Inflation"
+            value={inflation}
+            onChange={setInflation}
+            min={0}
+            max={5}
+            step={0.1}
+            suffix="% p.a."
+          />
+          <button
+            onClick={() => setRealMode((v) => !v)}
+            aria-pressed={realMode}
+            className={`col-span-2 flex min-h-[44px] items-center justify-center gap-2 rounded-xl border px-4 text-sm font-semibold transition ${
+              realMode
+                ? "border-gold/50 bg-gold/15 text-gold"
+                : "border-line bg-panel2/80 text-muted hover:text-text"
+            }`}
+          >
+            <span
+              className={`h-4 w-7 rounded-full p-0.5 transition ${
+                realMode ? "bg-gold/60" : "bg-line"
+              }`}
+            >
+              <span
+                className={`block h-3 w-3 rounded-full bg-text transition ${
+                  realMode ? "translate-x-3" : ""
+                }`}
+              />
+            </span>
+            {realMode ? "Real (today’s purchasing power)" : "Nominal values"}
+          </button>
+        </div>
         <p className="mt-2 text-xs text-muted">
           Expected return defaults to your portfolio’s backtested 10-year CAGR
-          — edit it to explore other scenarios.
+          — edit it to explore other scenarios. Returns are shown net of the
+          fund fee{realMode ? " and adjusted for inflation" : ""}.
         </p>
 
         <div className="mt-6 grid gap-4 sm:grid-cols-3">
@@ -167,6 +233,18 @@ export default function SavingsSimulator({ backtestedReturn, historicalReturns }
             </p>
           </motion.div>
         </div>
+
+        {feeCost > 0 && (
+          <p className="mt-3 text-xs leading-relaxed text-muted">
+            <span className="font-semibold text-gold">
+              Fees matter: a {ter}% TER costs you {chf(feeCost)}
+            </span>{" "}
+            in lost compounding over {Math.min(50, Math.max(1, years || 1))}{" "}
+            years compared to investing fee-free.
+            {realMode &&
+              ` All figures are in today’s purchasing power (${inflation}% inflation).`}
+          </p>
+        )}
 
         <div className="mt-6 h-72 sm:h-80">
           <ResponsiveContainer width="100%" height="100%">

@@ -6,6 +6,7 @@ import PortfolioBuilder from "./PortfolioBuilder";
 import Dashboard from "./Dashboard";
 import SavingsSimulator from "./SavingsSimulator";
 import QuantLab from "./QuantLab";
+import Pillar3a from "./Pillar3a";
 import AssetDetail from "./AssetDetail";
 import {
   portfolioReturns,
@@ -158,6 +159,8 @@ export default function App({ data }) {
         backtestedReturn={stats ? stats.cagr : 0.05}
         historicalReturns={stats ? stats.returns : []}
       />
+
+      <Pillar3a backtestedReturn={stats ? stats.cagr : 0.05} />
 
       {detailAsset && (
         <AssetDetail
