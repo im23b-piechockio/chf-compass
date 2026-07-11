@@ -11,7 +11,12 @@ import {
   CartesianGrid,
   ResponsiveContainer,
 } from "recharts";
-import { savingsProjection, chf, pct } from "../lib/finance";
+import {
+  savingsProjection,
+  monteCarloProjection,
+  chf,
+  pct,
+} from "../lib/finance";
 
 const SAVINGS_RATE = 0.005; // typical Swiss savings account / pillar-3a cash rate
 
@@ -37,7 +42,7 @@ function NumberInput({ label, value, onChange, min, max, step, suffix }) {
   );
 }
 
-export default function SavingsSimulator({ backtestedReturn }) {
+export default function SavingsSimulator({ backtestedReturn, historicalReturns }) {
   const [initial, setInitial] = useState(10000);
   const [monthly, setMonthly] = useState(500);
   const [years, setYears] = useState(20);
@@ -51,14 +56,18 @@ export default function SavingsSimulator({ backtestedReturn }) {
     if (!touched) setAnnualReturn(+(backtestedReturn * 100).toFixed(1));
   }, [backtestedReturn, touched]);
 
-  const { points, savingsPoints } = useMemo(() => {
+  const { points, savingsPoints, mc } = useMemo(() => {
     const safeYears = Math.min(50, Math.max(1, years || 1));
     const r = (annualReturn || 0) / 100;
     return {
       points: savingsProjection(initial || 0, monthly || 0, safeYears, r),
       savingsPoints: savingsProjection(initial || 0, monthly || 0, safeYears, SAVINGS_RATE),
+      mc:
+        historicalReturns && historicalReturns.length > 0
+          ? monteCarloProjection(initial || 0, monthly || 0, safeYears, historicalReturns)
+          : null,
     };
-  }, [initial, monthly, years, annualReturn]);
+  }, [initial, monthly, years, annualReturn, historicalReturns]);
 
   const final = points[points.length - 1];
   const savingsFinal = savingsPoints[savingsPoints.length - 1];
@@ -246,6 +255,105 @@ export default function SavingsSimulator({ backtestedReturn }) {
           </span>
         </div>
       </div>
+
+      {mc && (
+        <div className="glass mt-6 p-5 sm:p-6">
+          <h3 className="text-sm font-semibold uppercase tracking-wider text-muted">
+            Monte Carlo — 1,000 simulated futures
+          </h3>
+          <p className="mt-1 text-xs leading-relaxed text-muted">
+            Instead of assuming one smooth return, we replay 1,000 possible
+            futures by randomly resampling your portfolio&apos;s real
+            historical monthly returns (bootstrap). The band shows where 80%
+            of outcomes land.
+          </p>
+
+          <div className="mt-4 rounded-xl border border-green/40 bg-green/10 p-4">
+            <p className="text-sm leading-relaxed">
+              <span className="font-bold text-green">
+                90% of simulations end with at least{" "}
+                {chf(mc[mc.length - 1].p10)}
+              </span>
+              <span className="text-muted">
+                {" "}
+                · median outcome {chf(mc[mc.length - 1].p50)} · best 10% reach{" "}
+                {chf(mc[mc.length - 1].p90)}+
+              </span>
+            </p>
+          </div>
+
+          <div className="mt-5 h-72 sm:h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart
+                data={mc.map((p) => ({ ...p, band: [p.p10, p.p90] }))}
+                margin={{ top: 4, right: 4, bottom: 0, left: 4 }}
+              >
+                <defs>
+                  <linearGradient id="gBand" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#34d399" stopOpacity={0.35} />
+                    <stop offset="100%" stopColor="#34d399" stopOpacity={0.06} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid stroke="#26262b" strokeDasharray="3 6" vertical={false} />
+                <XAxis
+                  dataKey="year"
+                  tick={{ fill: "#8b909b", fontSize: 11 }}
+                  tickFormatter={(y) => `${y}y`}
+                  axisLine={{ stroke: "#26262b" }}
+                  tickLine={false}
+                />
+                <YAxis
+                  tick={{ fill: "#8b909b", fontSize: 11 }}
+                  tickFormatter={(v) =>
+                    v >= 1000000 ? `${(v / 1000000).toFixed(1)}M` : `${Math.round(v / 1000)}k`
+                  }
+                  axisLine={false}
+                  tickLine={false}
+                  width={44}
+                />
+                <Tooltip
+                  formatter={(v, name) =>
+                    name === "band"
+                      ? [`${chf(v[0])} – ${chf(v[1])}`, "p10 – p90 range"]
+                      : [chf(v), "Median (p50)"]
+                  }
+                  labelFormatter={(y) => `Year ${y}`}
+                  contentStyle={{
+                    background: "#16161b",
+                    border: "1px solid #26262b",
+                    borderRadius: 12,
+                    color: "#e6e8ec",
+                  }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="band"
+                  stroke="none"
+                  fill="url(#gBand)"
+                  animationDuration={500}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="p50"
+                  stroke="#34d399"
+                  strokeWidth={2}
+                  fill="none"
+                  animationDuration={500}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="mt-3 flex flex-wrap gap-4 text-xs text-muted">
+            <span className="flex items-center gap-1.5">
+              <span className="h-0.5 w-4 bg-green" /> Median path (p50)
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="h-2.5 w-4 rounded-sm bg-green/25" /> 80% of
+              outcomes (p10–p90)
+            </span>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

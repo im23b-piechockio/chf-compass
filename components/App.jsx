@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import PortfolioBuilder from "./PortfolioBuilder";
 import Dashboard from "./Dashboard";
 import SavingsSimulator from "./SavingsSimulator";
+import QuantLab from "./QuantLab";
 import AssetDetail from "./AssetDetail";
 import {
   portfolioReturns,
@@ -151,7 +152,12 @@ export default function App({ data }) {
         />
       </div>
 
-      <SavingsSimulator backtestedReturn={stats ? stats.cagr : 0.05} />
+      {stats && <QuantLab data={data} stats={stats} weights={weights} />}
+
+      <SavingsSimulator
+        backtestedReturn={stats ? stats.cagr : 0.05}
+        historicalReturns={stats ? stats.returns : []}
+      />
 
       {detailAsset && (
         <AssetDetail
