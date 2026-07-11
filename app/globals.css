@@ -79,3 +79,25 @@ button:active {
 ::-webkit-scrollbar-track {
   background: transparent;
 }
+
+/* One-page print report: hide the app, show only #print-report. */
+@media print {
+  body {
+    background: #fff;
+  }
+  body * {
+    visibility: hidden;
+  }
+  #print-report,
+  #print-report * {
+    visibility: visible;
+  }
+  #print-report {
+    display: block !important;
+    position: absolute;
+    inset: 0 auto auto 0;
+    width: 100%;
+    padding: 24px;
+    background: #fff;
+  }
+}

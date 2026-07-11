@@ -17,6 +17,7 @@ import {
   chf,
   pct,
 } from "../lib/finance";
+import { readNumParam, updateUrlParams } from "../lib/urlState";
 
 const SAVINGS_RATE = 0.005; // typical Swiss savings account / pillar-3a cash rate
 const DEFAULT_INFLATION = 1.0; // % p.a., long-run Swiss average assumption
@@ -60,6 +61,37 @@ export default function SavingsSimulator({ backtestedReturn, historicalReturns }
   useEffect(() => {
     if (!touched) setAnnualReturn(+(backtestedReturn * 100).toFixed(1));
   }, [backtestedReturn, touched]);
+
+  // Restore simulator settings from a shared URL (once, after mount),
+  // then mirror them back into the query string.
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => {
+    setInitial(readNumParam("i", 10000, 0, 10000000));
+    setMonthly(readNumParam("m", 500, 0, 100000));
+    setYears(readNumParam("y", 20, 1, 50));
+    setTer(readNumParam("t", DEFAULT_TER, 0, 3));
+    setInflation(readNumParam("inf", DEFAULT_INFLATION, 0, 5));
+    setRealMode(readNumParam("real", 0, 0, 1) === 1);
+    const r = readNumParam("r", NaN, -10, 30);
+    if (Number.isFinite(r)) {
+      setTouched(true);
+      setAnnualReturn(r);
+    }
+    setHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    updateUrlParams({
+      i: initial,
+      m: monthly,
+      y: years,
+      t: ter,
+      inf: inflation,
+      real: realMode ? 1 : null,
+      r: touched ? annualReturn : null,
+    });
+  }, [hydrated, initial, monthly, years, ter, inflation, realMode, touched, annualReturn]);
 
   const { points, savingsPoints, mc, feeCost } = useMemo(() => {
     const safeYears = Math.min(50, Math.max(1, years || 1));

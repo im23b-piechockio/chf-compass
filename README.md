@@ -18,7 +18,11 @@ Built as a portfolio flagship project to demonstrate both software engineering a
 
 3. **Savings-Plan Simulator** — initial amount + monthly contribution + horizon, defaulting the expected return to your portfolio's backtested CAGR. Shows contributed vs. compound gains as a stacked area chart, and — the Swiss twist — a side-by-side comparison against a **Swiss savings account at 0.5%**, with the CHF difference front and center.
 
-4. **Asset detail views** — click any asset for its own indexed price chart and key stats.
+4. **Quant Lab** — correlation heatmap, risk/return scatter with an efficient frontier (3,000 simulated weightings), Monte Carlo fan chart (1,000 bootstrap paths, p10/p50/p90), and an underwater drawdown chart.
+
+5. **Swiss depth** — pillar-3a tax calculator (2026 maximum CHF 7'258, marginal-rate slider), TER cost impact, and a real-vs-nominal inflation toggle.
+
+6. **Product features** — shareable portfolio links (allocation + simulator settings encoded in the URL), a one-page printable report, asset detail views, and a [methodology page](https://chf-compass.vercel.app/methodology) documenting every formula.
 
 ## Data pipeline (demo-proof by design)
 

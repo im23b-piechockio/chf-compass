@@ -22,6 +22,7 @@ import {
   monthlyReturns,
   cumulativeValue,
 } from "../lib/finance";
+import CountUp from "./CountUp";
 
 const BENCHMARKS = [
   { ticker: null, label: "No benchmark" },
@@ -70,7 +71,7 @@ const PALETTE = [
   "#4ade80",
 ];
 
-function MetricCard({ label, value, sub, tone = "text", info }) {
+function MetricCard({ label, value, num, fmt, sub, tone = "text", info }) {
   const toneClass =
     tone === "green" ? "text-green" : tone === "red" ? "text-red" : "text-text";
   return (
@@ -80,7 +81,7 @@ function MetricCard({ label, value, sub, tone = "text", info }) {
         {info && <InfoTip text={info} />}
       </p>
       <p className={`mt-1 text-xl font-bold tabular-nums sm:text-2xl ${toneClass}`}>
-        {value}
+        {num !== undefined ? <CountUp value={num} format={fmt} /> : value}
       </p>
       {sub && <p className="mt-0.5 text-xs text-muted">{sub}</p>}
     </div>
@@ -200,27 +201,31 @@ export default function Dashboard({ data, stats, weights, totalPct }) {
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
         <MetricCard
           label="Annualized return"
-          value={pct(stats.cagr)}
+          num={stats.cagr}
+          fmt={pct}
           sub="CAGR, last 10 years"
           tone={stats.cagr >= 0 ? "green" : "red"}
           info="The compound annual growth rate — the constant yearly return that would turn the starting value into the final value over the whole period."
         />
         <MetricCard
           label="Volatility"
-          value={pct(stats.vol)}
+          num={stats.vol}
+          fmt={pct}
           sub="annualized, monthly data"
           info="How much the portfolio's value swings around its average, per year. Higher volatility means a bumpier ride."
         />
         <MetricCard
           label="Sharpe ratio"
-          value={stats.sharpe.toFixed(2)}
+          num={stats.sharpe}
+          fmt={(v) => v.toFixed(2)}
           sub="return per unit of risk"
           tone={stats.sharpe >= 1 ? "green" : stats.sharpe < 0.5 ? "red" : "text"}
           info="Return earned above a ~0.5% risk-free rate, divided by volatility. Above 1 is considered good — more reward for each unit of risk taken."
         />
         <MetricCard
           label="Max drawdown"
-          value={pct(stats.mdd)}
+          num={stats.mdd}
+          fmt={pct}
           sub="worst peak-to-trough"
           tone="red"
           info="The deepest fall from a previous high before recovering — the worst loss an investor would have sat through."
@@ -249,7 +254,8 @@ export default function Dashboard({ data, stats, weights, totalPct }) {
         {outperformance != null && (
           <MetricCard
             label={`vs. ${benchLabel}`}
-            value={`${outperformance >= 0 ? "+" : ""}${chf(outperformance)}`}
+            num={outperformance}
+            fmt={(v) => `${v >= 0 ? "+" : ""}${chf(v)}`}
             sub={`${outperformance >= 0 ? "+" : ""}${pct(endValue / benchEnd - 1)} vs. benchmark`}
             tone={outperformance >= 0 ? "green" : "red"}
             info={`Final value of your portfolio minus the final value of CHF 10’000 invested purely in ${benchLabel} over the same period.`}
