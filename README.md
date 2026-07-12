@@ -6,6 +6,19 @@ An interactive investment portfolio dashboard, risk-analytics desk and Swiss fin
 
 Built as a portfolio flagship project to demonstrate both software engineering and financial thinking. Organized into four sections: **Overview** (builder + dashboard), **Analytics** (quant lab + risk desk), **Planning** (Swiss financial life), and **Simulator** (savings plans).
 
+![Overview — portfolio builder and live dashboard](docs/overview.jpg)
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/analytics.jpg" alt="Analytics — correlation heatmap, efficient frontier and underwater chart" /></td>
+    <td width="50%"><img src="docs/montecarlo.jpg" alt="Monte Carlo — 1,000 simulated futures with percentile bands" /></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>Risk analytics: correlations, efficient frontier, drawdowns</sub></td>
+    <td align="center"><sub>Monte Carlo: 1,000 bootstrap futures with p10–p90 bands</sub></td>
+  </tr>
+</table>
+
 ## What it does
 
 1. **Portfolio Builder** — pick from 11 real assets (MSCI World, S&P 500, Nasdaq 100, SMI, Nestlé, Novartis, UBS, Emerging Markets, US bonds, gold, Bitcoin), grouped by category, and assign weights that must sum to 100% (one-tap normalization).
