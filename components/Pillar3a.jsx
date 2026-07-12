@@ -67,7 +67,10 @@ export default function Pillar3a({ backtestedReturn }) {
                 max={MAX_3A_2026}
                 step={100}
                 onChange={(e) => setContribution(+e.target.value)}
-                onBlur={() => setContribution(capped)}
+                onBlur={(e) => {
+                  setContribution(capped);
+                  e.target.value = String(capped);
+                }}
                 className="min-h-[44px] w-full bg-transparent text-sm font-semibold tabular-nums outline-none"
                 aria-label="Annual 3a contribution"
               />
@@ -98,6 +101,9 @@ export default function Pillar3a({ backtestedReturn }) {
                 max={45}
                 step={1}
                 onChange={(e) => setYears(+e.target.value)}
+                onBlur={(e) => {
+                  e.target.value = String(years);
+                }}
                 className="min-h-[44px] w-full bg-transparent text-sm font-semibold tabular-nums outline-none"
                 aria-label="Years until withdrawal"
               />

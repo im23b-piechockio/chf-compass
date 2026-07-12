@@ -60,6 +60,9 @@ function NumField({ label, value, onChange, min, max, step, suffix }) {
           max={max}
           step={step}
           onChange={(e) => onChange(+e.target.value)}
+          onBlur={(e) => {
+            e.target.value = String(value);
+          }}
           className="min-h-[44px] w-full min-w-0 bg-transparent text-sm font-semibold tabular-nums outline-none"
           aria-label={label}
         />

@@ -37,6 +37,11 @@ function NumberInput({ label, value, onChange, min, max, step, suffix }) {
           max={max}
           step={step}
           onChange={(e) => onChange(+e.target.value)}
+          onBlur={(e) => {
+            // Normalize stray text like "01200" (React skips syncing the DOM
+            // when the parsed number already matches the state).
+            e.target.value = String(value);
+          }}
           className="min-h-[44px] w-full bg-transparent text-sm font-semibold tabular-nums outline-none"
         />
         {suffix && <span className="ml-1 shrink-0 text-xs text-muted">{suffix}</span>}

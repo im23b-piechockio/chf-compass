@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import PortfolioBuilder from "./PortfolioBuilder";
 import Dashboard from "./Dashboard";
 import SavingsSimulator from "./SavingsSimulator";
@@ -252,14 +252,15 @@ export default function App({ data }) {
         </div>
       )}
 
-      <AnimatePresence mode="wait">
-        <motion.main
-          key={tab}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -6 }}
-          transition={{ duration: 0.22 }}
-        >
+      {/* Entrance-only animation — never gate tab content behind an exit
+          animation: rAF pauses in background tabs, which would leave the
+          previous tab stuck on screen. */}
+      <motion.main
+        key={tab}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.22 }}
+      >
           {tab === "overview" && (
             <>
               <section className="mb-8 pt-8 sm:mb-10 sm:pt-12">
@@ -342,8 +343,7 @@ export default function App({ data }) {
               Add at least one asset in the Overview tab first.
             </div>
           )}
-        </motion.main>
-      </AnimatePresence>
+      </motion.main>
 
       {detailAsset && (
         <AssetDetail
