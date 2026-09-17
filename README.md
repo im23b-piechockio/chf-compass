@@ -2,16 +2,16 @@
 
 **Live demo → [chf-compass.vercel.app](https://chf-compass.vercel.app)**
 
-An interactive investment portfolio dashboard, risk-analytics desk and Swiss financial-planning suite in Swiss francs (CHF), built on **real historical market data** — no invented numbers anywhere.
+An interactive investment portfolio dashboard, risk-analytics desk and Swiss financial-planning suite in Swiss francs (CHF), built on **real historical market data**, with no invented numbers anywhere.
 
 Built as a portfolio flagship project to demonstrate both software engineering and financial thinking. Organized into four sections: **Overview** (builder + dashboard), **Analytics** (quant lab + risk desk), **Planning** (Swiss financial life), and **Simulator** (savings plans).
 
-![Overview — portfolio builder and live dashboard](docs/overview.jpg)
+![Overview: portfolio builder and live dashboard](docs/overview.jpg)
 
 <table>
   <tr>
-    <td width="50%"><img src="docs/analytics.jpg" alt="Analytics — correlation heatmap, efficient frontier and underwater chart" /></td>
-    <td width="50%"><img src="docs/montecarlo.jpg" alt="Monte Carlo — 1,000 simulated futures with percentile bands" /></td>
+    <td width="50%"><img src="docs/analytics.jpg" alt="Analytics: correlation heatmap, efficient frontier and underwater chart" /></td>
+    <td width="50%"><img src="docs/montecarlo.jpg" alt="Monte Carlo: 1,000 simulated futures with percentile bands" /></td>
   </tr>
   <tr>
     <td align="center"><sub>Risk analytics: correlations, efficient frontier, drawdowns</sub></td>
@@ -21,25 +21,25 @@ Built as a portfolio flagship project to demonstrate both software engineering a
 
 ## What it does
 
-1. **Portfolio Builder** — pick from 11 real assets (MSCI World, S&P 500, Nasdaq 100, SMI, Nestlé, Novartis, UBS, Emerging Markets, US bonds, gold, Bitcoin), grouped by category, and assign weights that must sum to 100% (one-tap normalization).
+1. **Portfolio Builder**: pick from 11 real assets (MSCI World, S&P 500, Nasdaq 100, SMI, Nestlé, Novartis, UBS, Emerging Markets, US bonds, gold, Bitcoin), grouped by category, and assign weights that must sum to 100% (one-tap normalization).
 
-2. **Live Dashboard** — as you move the sliders, everything recomputes instantly:
+2. **Live Dashboard**: as you move the sliders, everything recomputes instantly:
    - Allocation donut chart
    - 10-year backtest of CHF 10'000 invested in your exact mix, rebalanced monthly
    - Metric cards: CAGR, annualized volatility, max drawdown, best/worst year, diversification score
    - Plain-English insights (concentration warnings, volatility flags, etc.)
 
-3. **Savings-Plan Simulator** — initial amount + monthly contribution + horizon, defaulting the expected return to your portfolio's backtested CAGR. Shows contributed vs. compound gains as a stacked area chart, and — the Swiss twist — a side-by-side comparison against a **Swiss savings account at 0.5%**, with the CHF difference front and center.
+3. **Savings-Plan Simulator**: initial amount + monthly contribution + horizon, defaulting the expected return to your portfolio's backtested CAGR. Shows contributed vs. compound gains as a stacked area chart, and (the Swiss twist) a side-by-side comparison against a **Swiss savings account at 0.5%**, with the CHF difference front and center.
 
-4. **Quant Lab** — correlation heatmap, risk/return scatter with an efficient frontier (3,000 simulated weightings), Monte Carlo fan chart (1,000 bootstrap paths, p10/p50/p90), and an underwater drawdown chart.
+4. **Quant Lab**: correlation heatmap, risk/return scatter with an efficient frontier (3,000 simulated weightings), Monte Carlo fan chart (1,000 bootstrap paths, p10/p50/p90), and an underwater drawdown chart.
 
-5. **Swiss depth** — pillar-3a tax calculator (2026 maximum CHF 7'258, marginal-rate slider), TER cost impact, and a real-vs-nominal inflation toggle.
+5. **Swiss depth**: pillar-3a tax calculator (2026 maximum CHF 7'258, marginal-rate slider), TER cost impact, and a real-vs-nominal inflation toggle.
 
-6. **Product features** — shareable portfolio links (allocation + simulator settings encoded in the URL), a one-page printable report, asset detail views, and a [methodology page](https://chf-compass.vercel.app/methodology) documenting every formula.
+6. **Product features**: shareable portfolio links (allocation + simulator settings encoded in the URL), a one-page printable report, asset detail views, and a [methodology page](https://chf-compass.vercel.app/methodology) documenting every formula.
 
 ## Data pipeline (demo-proof by design)
 
-`scripts/fetch-data.mjs` fetches 15 years of monthly adjusted-close prices for every ticker plus `USDCHF=X` from the Yahoo Finance chart API, converts all USD-priced assets to CHF, aligns everything to a common monthly range (last ~10 years), and writes the result to **`data/assets.json`, which is committed**. The live app reads only this static bundled file — zero runtime API calls, so the demo can never break on a rate limit.
+`scripts/fetch-data.mjs` fetches 15 years of monthly adjusted-close prices for every ticker plus `USDCHF=X` from the Yahoo Finance chart API, converts all USD-priced assets to CHF, aligns everything to a common monthly range (last ~10 years), and writes the result to **`data/assets.json`, which is committed**. The live app reads only this static bundled file. Zero runtime API calls, so the demo can never break on a rate limit.
 
 ```bash
 npm run fetch-data   # regenerate data/assets.json (optional)
@@ -60,9 +60,9 @@ npm run fetch-data   # regenerate data/assets.json (optional)
 ## Tech stack
 
 - **Next.js 15** (App Router) + **React 18**
-- **Tailwind CSS** — dark, minimal fintech design system
-- **Recharts** — donut, line, and stacked-area charts
-- **Framer Motion** — subtle entrance and state animations
+- **Tailwind CSS**: dark, minimal fintech design system
+- **Recharts**: donut, line, and stacked-area charts
+- **Framer Motion**: subtle entrance and state animations
 - Fully responsive and mobile-optimized (safe-area insets, ≥44px tap targets, no iOS input zoom)
 
 ## Run locally
